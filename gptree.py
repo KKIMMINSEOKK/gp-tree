@@ -246,9 +246,47 @@ def insertEdge(hypergraph, gpList, root, headerTable, hyperedge, k, g, S):
     # print(f'While Loop: {whileLoopEnd - whileLoopStart}')
     return set(headerTable.keys()), gpList, root, headerTable
 
-    pass
+def removeEdge(hypergraph, gpList, root, headerTable, hyperedge, k, g, S):
 
-def removeEdge():
+    '''gp-tree에서 edge의 노드들 count 낮춰야 함'''
+
+    # peeling phase
+    for v in reversed(gpList):
+        nbrs = findGNbr(headerTable, v, g)
+        S[v] = len(nbrs)
+        if S[v] < k:
+            Q.put(v)
+            R.add(v)
+    initialPhaseEnd = time.time()
+    whileLoopStart = time.time()
+    while not Q.empty():
+        v = Q.get()
+        gpList.remove(v)
+        nbrs = findGNbr(headerTable, v, g)
+        # nodeRemovalStart = time.time()
+        removeNode(v, headerTable)
+        # nodeRemovalEnd = time.time()
+        # nodeRemovalTime += nodeRemovalEnd - nodeRemovalStart
+        for u in nbrs:
+            if u in R:
+                continue
+            # newNbrs = findGNbr(headerTable, u, g)
+            S[u] -= 1 # EPA 처럼 개수까지 저장해놓으면 시간 거의 안 걸림
+            if S[u] < k:
+                Q.put(u)
+                R.add(u)
+        if v in headerTable: # 체크 필요한가?
+            del headerTable[v]
+    whileLoopEnd = time.time()
+    insertionEnd = time.time()
+    # print(f'Edge Insertion: {insertionEnd - insertionStart}')
+    # print(f'Num of Nodes: {len(set(headerTable.keys()))}')
+
+    # print(f'Initial Phase: {initialPhaseEnd - initialPhaseStart}')
+    # print(f'Node Removal Time: {nodeRemovalTime}')
+    # print(f'While Loop: {whileLoopEnd - whileLoopStart}')
+    return set(headerTable.keys()), gpList, root, headerTable
+
     pass
 
 def printGPTree(root, headerTable):
