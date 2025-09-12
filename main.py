@@ -6,7 +6,6 @@ import NPA
 import EPA
 import gptree
 import utils
-# import decomposition
 import tracemalloc
 import psutil
 import linecache
@@ -14,7 +13,7 @@ import linecache
 
 
 parser = argparse.ArgumentParser(description="Peeling Algorithm for Hypergraph (k, g)-core")
-parser.add_argument("--algorithm", help="Algorithm to use", choices=["NPA", "EPA", "decom", "tree", "compare"], default="tree")
+parser.add_argument("--algorithm", help="Algorithm to use", choices=["NPA", "EPA", "tree", "compare"], default="tree")
 parser.add_argument("--network", help="Path to the network file"
                     ,default='./datasets/congress/network.hyp')
 parser.add_argument("--k", type=int, help="Value of k",default=3)
@@ -35,10 +34,6 @@ elif args.algorithm == "EPA":
     start_time = time.time()
     G, report, S = EPA.run(hypergraph, args.k, args.g)
     end_time = time.time()
-# elif args.algorithm == "decom":
-#     start_time = time.time()
-#     G = decomposition.run(hypergraph)
-#     end_time = time.time()
 elif args.algorithm == "tree":
     start_time = time.time()
     G, gpList, root, HT, S = gptree.kgComputation(hypergraph, E, args.k, args.g)
@@ -46,7 +41,6 @@ elif args.algorithm == "tree":
     mode = input("Select Mode (INSERT, REMOVE, END): ")
     if mode == "INSERT":
         newEdge = input("Type the new edge (e.g. 1 2 3): ")
-        # e = newEdge parsing
         nodes = {node.strip() for node in newEdge.strip().split(',')}
         nodes = {int(x) for x in  nodes}
         hyperedge = set(nodes)
@@ -75,7 +69,6 @@ elif args.algorithm == "compare":
     #             tf = False
     # print(tf)
     # print(set(G2) - set(G1))
-    
     print(f'EPA: {len(G1)}')
     print(f"Run Time: {end_time - start_time}\n")
     print(f'gpTree: {len(G2)}')
