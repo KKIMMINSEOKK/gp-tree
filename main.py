@@ -83,27 +83,19 @@ memory_usage = memory_after - memory_before  # Calculate memory used
 # Write results to file
 output_dir = os.path.dirname(args.network)
 
-if args.algorithm == "decom":
-    output_filename = f"decomposition_mod.dat"
-else:
-    output_filename = f"{args.algorithm}_{args.k}_{args.g}_core.dat"
+output_filename = f"{args.algorithm}_{args.k}_{args.g}_core.dat"
 output_path = os.path.join(output_dir, output_filename)
 
 with open(output_path, 'w') as output_file:
     # Write size of nodes
-    if args.algorithm != "decom":
-        output_file.write(f"Num of nodes: {str(len(G))}\n")
+    output_file.write(f"Num of nodes: {str(len(G))}\n")
     # Write running time
     output_file.write(f"Run Time: {end_time - start_time}\n")
     # Write nodes
-    if args.algorithm == "decom":
-        output_file.write("Result\n")
-        for key, value in G.items():
-            output_file.write(f"{key}: {value}\n")
-    else:
-        output_file.write("Nodes:")
-        nodes = " ".join(str(node) for node in G)
-        output_file.write(nodes + "\n")
+    
+    output_file.write("Nodes:")
+    nodes = " ".join(str(node) for node in G)
+    output_file.write(nodes + "\n")
 
     #write memory usage
     output_file.write("Memory Usage(MB): ")
