@@ -15,7 +15,7 @@ import linecache
 parser = argparse.ArgumentParser(description="Peeling Algorithm for Hypergraph (k, g)-core")
 parser.add_argument("--algorithm", help="Algorithm to use", choices=["NPA", "EPA", "tree", "compare"], default="tree")
 parser.add_argument("--network", help="Path to the network file"
-                    ,default='./datasets/congress/network.hyp')
+                    ,default='./datasets/gowalla/network.hyp')
 parser.add_argument("--k", type=int, help="Value of k",default=3)
 parser.add_argument("--g", type=int, help="Value of g",default=3)
 args = parser.parse_args()
@@ -38,6 +38,7 @@ elif args.algorithm == "tree":
     start_time = time.time()
     G, gpList, root, HT, S = gptree.kgComputation(hypergraph, E, args.k, args.g)
     end_time = time.time()
+    print(f'Run Time: {end_time - start_time}')
     mode = input("Select Mode (INSERT, REMOVE, END): ")
     if mode == "INSERT":
         newEdge = input("Type the new edge (e.g. 1 2 3): ")
@@ -51,6 +52,15 @@ elif args.algorithm == "tree":
                 hypergraph.nodes[node]['hyperedges'].append(hyperedge)  # Add the hyperedge to the node's hyperedge set
         gptree.insertEdge(hypergraph, gpList, root, HT, hyperedge, args.k, args.g, S)
     elif mode == "REMOVE":
+        targetId = int(input("Type the id of the hyperedge to remove: "))
+        if 0 <= targetId < len(E):
+            targetEdge = E.pop(targetId)
+            remove_start = time.time()
+            gptree.removeEdge(hypergraph, gpList, root, HT, targetEdge, args.k, args.g, S)
+            remove_end = time.time()
+            print(f'Removal Time: {remove_end - remove_start}')
+        else:
+            print("Index Out of Bound")
         pass
     else:
         pass

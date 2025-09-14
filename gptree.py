@@ -64,6 +64,31 @@ def addEdge(root, headerTable, e, order, gpSet):
                 headerTable[v] = (v, child)
                 child.nodeLink = currentHead
         current = child
+
+def deleteEdge(root, headerTable, e, order, gpSet):
+    edgeFilteringStart = time.time()
+    filtered = [v for v in e if v in gpSet]
+    edgeFilteringBeforeSorting = time.time()
+    key = order.__getitem__
+    filtered.sort(key=key)
+    edgeFilteringEnd = time.time()
+    # edgeFilteringTime += edgeFilteringBeforeSorting - edgeFilteringStart
+    # edgeSortingTime += edgeFilteringEnd - edgeFilteringBeforeSorting
+    # totalEdgeFilteringTime += edgeFilteringEnd - edgeFilteringStart
+    if not filtered:
+        return
+    current = root
+    for v in filtered:
+        if v in current.children:
+            # increment the count of existing child
+            child = current.children[v]
+            child.count -= 1
+            if child.count == 0:
+                del current.children[v]
+        else:
+            # 아마 이럴 일 없을 거 같긴 함
+            print('error?')
+        current = child
     
 def buildGPTree(hypergraph, hyperedges, k, g):
     gpListContructionStart = time.time()
@@ -203,6 +228,7 @@ def insertEdge(hypergraph, gpList, root, headerTable, hyperedge, k, g, S):
             gpList.append(v)
             N.add(v)
     order = {v: i for i, v in enumerate(gpList)}
+    # hyperedge 안 넣은 듯
     for v in N:
         headerTable[v] = (v, None)
         for e in hypergraph.nodes[v]['hyperedges']:
@@ -249,8 +275,13 @@ def insertEdge(hypergraph, gpList, root, headerTable, hyperedge, k, g, S):
 def removeEdge(hypergraph, gpList, root, headerTable, hyperedge, k, g, S):
 
     '''gp-tree에서 edge의 노드들 count 낮춰야 함'''
+    gpSet = set(gpList)
+    order = {v: i for i, v in enumerate(gpList)}
+    deleteEdge(root, headerTable, hyperedge, order, gpSet)
 
     # peeling phase
+    Q = Queue()
+    R = set()
     for v in reversed(gpList):
         nbrs = findGNbr(headerTable, v, g)
         S[v] = len(nbrs)
