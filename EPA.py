@@ -33,7 +33,7 @@ def run(hypergraph, k, g):
             VQ.put(v)
             VQ1.add(v)
     initialPhaseEnd = time.time()
-    # print(f'[EPA] initial phase time: {initialPhaseEnd - initialPhaseStart}')
+    print(f'[EPA] initial phase time: {initialPhaseEnd - initialPhaseStart}')
     peelingStart = time.time()
     while not VQ.empty():
         v = VQ.get()
@@ -53,7 +53,7 @@ def run(hypergraph, k, g):
                 S[w] -= 1
     peelingEnd = time.time()
 
-    # print(f'peeling time: {peelingEnd - peelingStart}')
+    print(f'peeling time: {peelingEnd - peelingStart}')
     # print(f'Num of nodes: {len(H)}')
 
     # for u in H:

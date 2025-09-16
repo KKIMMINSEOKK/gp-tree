@@ -115,6 +115,8 @@ def removeNode(node, headerTable):
 def ascendPath(node, count):
     current = node.parent
     while current and current.item is not None:
+        if current.item not in count:
+            count[current.item] = 0
         count[current.item] += node.count
         current = current.parent
     return count
@@ -124,6 +126,8 @@ def descendPath(node, count):
     while stack:
         node = stack.pop()
         for child in node.children.values():
+            if child.item not in count:
+                count[child.item] = 0
             count[child.item] += child.count
             stack.append(child)
     return count
@@ -131,7 +135,7 @@ def descendPath(node, count):
 def findGNbr(headerTable, node, g):
     # headerTable에서 node에 해당하는 첫 노드 가져오기
     v = headerTable[node]
-    count = Counter()
+    count = {}
     # nodeLink를 따라가며 모든 노드 방문
     while v is not None:
         # 각 노드에서 ascendPath를 통해 dictionary에 노드 + count 저장 (count는 모두 node의 count)
