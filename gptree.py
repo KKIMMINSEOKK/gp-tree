@@ -35,15 +35,9 @@ def buildGPList(hypergraph, k, g):
     return sorted(gpList, key=lambda x: gpList[x], reverse=True)
 
 def addEdge(root, headerTable, e, order, gpSet):
-    edgeFilteringStart = time.time()
     filtered = [v for v in e if v in gpSet]
-    edgeFilteringBeforeSorting = time.time()
     key = order.__getitem__
     filtered.sort(key=key)
-    edgeFilteringEnd = time.time()
-    # edgeFilteringTime += edgeFilteringBeforeSorting - edgeFilteringStart
-    # edgeSortingTime += edgeFilteringEnd - edgeFilteringBeforeSorting
-    # totalEdgeFilteringTime += edgeFilteringEnd - edgeFilteringStart
     if not filtered:
         return
     current = root
@@ -56,25 +50,19 @@ def addEdge(root, headerTable, e, order, gpSet):
             # Create a new child node
             child = current.addChild(v)
             child.count = 1
-            if headerTable[v][1] is None:
-                headerTable[v] = (v, child)
+            if headerTable[v] is None:
+                headerTable[v] = child
             else:
                 # Maintain the nodeLink
-                currentHead = headerTable[v][1]
-                headerTable[v] = (v, child)
+                currentHead = headerTable[v]
+                headerTable[v] = child
                 child.nodeLink = currentHead
         current = child
 
-def deleteEdge(root, headerTable, e, order, gpSet):
-    edgeFilteringStart = time.time()
+def deleteEdge(root, e, order, gpSet):
     filtered = [v for v in e if v in gpSet]
-    edgeFilteringBeforeSorting = time.time()
     key = order.__getitem__
     filtered.sort(key=key)
-    edgeFilteringEnd = time.time()
-    # edgeFilteringTime += edgeFilteringBeforeSorting - edgeFilteringStart
-    # edgeSortingTime += edgeFilteringEnd - edgeFilteringBeforeSorting
-    # totalEdgeFilteringTime += edgeFilteringEnd - edgeFilteringStart
     if not filtered:
         return
     current = root
@@ -86,38 +74,22 @@ def deleteEdge(root, headerTable, e, order, gpSet):
             if child.count == 0:
                 del current.children[v]
         else:
-            # 아마 이럴 일 없을 거 같긴 함
+            # 아마 이럴 일 없음
             print('error?')
         current = child
     
 def buildGPTree(hypergraph, hyperedges, k, g):
-    gpListContructionStart = time.time()
     gpList = buildGPList(hypergraph, k, g)
-    gpListConstructionEnd = time.time()
-    print(f'[gpTree] gp-list Construction Time: {gpListConstructionEnd - gpListContructionStart}')
-
-    headerTable = {i: (i, None) for i in gpList}
-
+    headerTable = {i: None for i in gpList}
     root = GPNode(None)
-    
-    edgeFilteringTime = 0
-    edgeSortingTime = 0
-    treeBuildingStart = time.time()
     order = {v: i for i, v in enumerate(gpList)} # to speed-up edge filtering & sorting
-    edgeInsertionStart = time.time()
     for e in hyperedges:
         addEdge(root, headerTable, e, order, order)
-    edgeInsertionEnd = time.time()
-    treeBuildingEnd = time.time()
-
-    # print(f'Edge Filtering Time: {edgeFilteringTime}')
-    # print(f'Edge Sorting Time: {edgeSortingTime}')
-    # print(f'Total Edge Filtering Time: {totalEdgeFilteringTime}')
-    # print(f'Tree Building Time: {treeBuildingEnd - treeBuildingStart}')
 
     return root, headerTable, gpList
 
-def mergeSubtree(parentSubtree, orphanSubtree, headerTable):
+def mergeSubtree(parentSubtree, orphanSubtree, headerTable):\
+    # 추후에 headerTable 연결도 정리 필요
     for orphanItem, orphanChild in orphanSubtree.children.items():
         if orphanItem in parentSubtree.children:
             existing = parentSubtree.children[orphanItem]
@@ -130,7 +102,7 @@ def mergeSubtree(parentSubtree, orphanSubtree, headerTable):
             orphanChild.parent = parentSubtree
 
 def removeNode(node, headerTable):
-    node = headerTable[node][1]
+    node = headerTable[node]
     while node:
         parent = node.parent
         if parent and node.item in parent.children:
@@ -158,7 +130,7 @@ def descendPath(node, count):
 
 def findGNbr(headerTable, node, g):
     # headerTable에서 node에 해당하는 첫 노드 가져오기
-    v = headerTable[node][1]
+    v = headerTable[node]
     count = Counter()
     # nodeLink를 따라가며 모든 노드 방문
     while v is not None:
@@ -171,56 +143,37 @@ def findGNbr(headerTable, node, g):
     return [v for v, c in count.items() if c >= g]
 
 def kgComputation(hypergraph, E, k, g):
-    kgStart = time.time()
     Q = Queue()
     R = set()
     S = {}
-    treeBuildStart = time.time()
     root, headerTable, gpList = buildGPTree(hypergraph, E, k, g)
-    treeBuildEnd = time.time()
 
-    # print(f'Tree Construction Time: {treeBuildEnd - treeBuildStart}')
-
-    nodeRemovalTime = 0
-
-    initialPhaseStart = time.time()
     for v in reversed(gpList):
         nbrs = findGNbr(headerTable, v, g)
+        # if len(nbrs) < k:
         S[v] = len(nbrs)
         if S[v] < k:
             Q.put(v)
             R.add(v)
-    initialPhaseEnd = time.time()
-    whileLoopStart = time.time()
     while not Q.empty():
         v = Q.get()
         gpList.remove(v)
         nbrs = findGNbr(headerTable, v, g)
-        nodeRemovalStart = time.time()
         removeNode(v, headerTable)
-        nodeRemovalEnd = time.time()
-        nodeRemovalTime += nodeRemovalEnd - nodeRemovalStart
         for u in nbrs:
             if u in R:
                 continue
-            # newNbrs = findGNbr(headerTable, u, g)
+            newNbrs = findGNbr(headerTable, u, g)
+            # if len(newNbrs) < k:
             S[u] -= 1 # EPA 처럼 개수까지 저장해놓으면 시간 거의 안 걸림
             if S[u] < k:
                 Q.put(u)
                 R.add(u)
         if v in headerTable: # 체크 필요한가?
             del headerTable[v]
-    whileLoopEnd = time.time()
-    kgEnd = time.time()
-    
-    # print(f'Initial Phase: {initialPhaseEnd - initialPhaseStart}')
-    # print(f'Node Removal Time: {nodeRemovalTime}')
-    # print(f'While Loop: {whileLoopEnd - whileLoopStart}')
-    # print(f'kg Computation: {kgEnd - kgStart}')
     return set(headerTable.keys()), gpList, root, headerTable, S
 
 def insertEdge(hypergraph, gpList, root, headerTable, hyperedge, k, g, S):
-    insertionStart = time.time()
     N = set()
     gpSet = set(gpList)
     for v in hyperedge:
@@ -230,7 +183,7 @@ def insertEdge(hypergraph, gpList, root, headerTable, hyperedge, k, g, S):
     order = {v: i for i, v in enumerate(gpList)}
     # hyperedge 안 넣은 듯
     for v in N:
-        headerTable[v] = (v, None)
+        headerTable[v] = None
         for e in hypergraph.nodes[v]['hyperedges']:
             addEdge(root, headerTable, e, order, N)
     
@@ -248,33 +201,20 @@ def insertEdge(hypergraph, gpList, root, headerTable, hyperedge, k, g, S):
         v = Q.get()
         gpList.remove(v)
         nbrs = findGNbr(headerTable, v, g)
-        # nodeRemovalStart = time.time()
         removeNode(v, headerTable)
-        # nodeRemovalEnd = time.time()
-        # nodeRemovalTime += nodeRemovalEnd - nodeRemovalStart
         for u in nbrs:
             if u in R:
                 continue
-            # newNbrs = findGNbr(headerTable, u, g)
             S[u] -= 1 # EPA 처럼 개수까지 저장해놓으면 시간 거의 안 걸림
             if S[u] < k:
                 Q.put(u)
                 R.add(u)
         if v in headerTable: # 체크 필요한가?
             del headerTable[v]
-    whileLoopEnd = time.time()
-    insertionEnd = time.time()
-    # print(f'Edge Insertion: {insertionEnd - insertionStart}')
-    # print(f'Num of Nodes: {len(set(headerTable.keys()))}')
-
-    # print(f'Initial Phase: {initialPhaseEnd - initialPhaseStart}')
-    # print(f'Node Removal Time: {nodeRemovalTime}')
-    # print(f'While Loop: {whileLoopEnd - whileLoopStart}')
     return set(headerTable.keys()), gpList, root, headerTable
 
 def removeEdge(hypergraph, gpList, root, headerTable, hyperedge, k, g, S):
 
-    '''gp-tree에서 edge의 노드들 count 낮춰야 함'''
     gpSet = set(gpList)
     order = {v: i for i, v in enumerate(gpList)}
     deleteEdge(root, headerTable, hyperedge, order, gpSet)
@@ -294,31 +234,17 @@ def removeEdge(hypergraph, gpList, root, headerTable, hyperedge, k, g, S):
         v = Q.get()
         gpList.remove(v)
         nbrs = findGNbr(headerTable, v, g)
-        # nodeRemovalStart = time.time()
         removeNode(v, headerTable)
-        # nodeRemovalEnd = time.time()
-        # nodeRemovalTime += nodeRemovalEnd - nodeRemovalStart
         for u in nbrs:
             if u in R:
                 continue
-            # newNbrs = findGNbr(headerTable, u, g)
             S[u] -= 1 # EPA 처럼 개수까지 저장해놓으면 시간 거의 안 걸림
             if S[u] < k:
                 Q.put(u)
                 R.add(u)
         if v in headerTable: # 체크 필요한가?
             del headerTable[v]
-    whileLoopEnd = time.time()
-    insertionEnd = time.time()
-    # print(f'Edge Insertion: {insertionEnd - insertionStart}')
-    # print(f'Num of Nodes: {len(set(headerTable.keys()))}')
-
-    # print(f'Initial Phase: {initialPhaseEnd - initialPhaseStart}')
-    # print(f'Node Removal Time: {nodeRemovalTime}')
-    # print(f'While Loop: {whileLoopEnd - whileLoopStart}')
     return set(headerTable.keys()), gpList, root, headerTable
-
-    pass
 
 def printGPTree(root, headerTable):
     """
@@ -336,7 +262,7 @@ def printGPTree(root, headerTable):
     print("GP-Tree Structure:")
     printNode(root)
     print("\nHeader Table:")
-    for item, (name, node) in headerTable.items():
+    for item, node in headerTable.items():
         chain = []
         n = node
         while n:

@@ -34,6 +34,12 @@ def run(hypergraph, k, g):
     H = set(hypergraph.nodes())
     VQ = Queue()
     neighbor_occurrence_map, VQ = construct_neighbor_occurrence_map(hypergraph, g,k,VQ)
+    
+    count = 0
+    for node in H:
+        count += len(neighbor_occurrence_map.get(node))
+    print(f'size of neighbour map: {count}')
+
     while not VQ.empty():
         v = VQ.get()
         if v not in H:
