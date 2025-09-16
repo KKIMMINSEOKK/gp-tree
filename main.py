@@ -4,7 +4,7 @@ import os
 import argparse
 import NPA
 import EPA
-import gptree_pointer as gptree
+import gptree as gptree
 import utils
 import tracemalloc
 import psutil
