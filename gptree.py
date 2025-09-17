@@ -78,16 +78,17 @@ def deleteEdge(root, e, order, gpSet):
             print('error?')
         current = child
     
-def buildGPTree(hypergraph, hyperedges, k, g):
+def buildGPTree(hypergraph, hyperedges, k, g, statistics):
     gpList = buildGPList(hypergraph, k, g)
-    print(f'[gp-tree] num of nodes in gp-list: {len(gpList)}')
+    statistics['gp-list size'] = len(gpList)
+    # print(f'[gp-tree] num of nodes in gp-list: {len(gpList)}')
     headerTable = {i: None for i in gpList}
     root = GPNode(None)
     order = {v: i for i, v in enumerate(gpList)} # to speed-up edge filtering & sorting
     for e in hyperedges:
         addEdge(root, headerTable, e, order, order)
 
-    return root, headerTable, gpList
+    return root, headerTable, gpList, statistics
 
 def mergeSubtree(parentSubtree, orphanSubtree, headerTable):\
     # 추후에 headerTable 연결도 정리 필요
@@ -147,7 +148,7 @@ def findGNbr(headerTable, node, g):
     # dictionary에서 count가 g 이상인 노드들만 반환
     return [v for v, c in count.items() if c >= g]
 
-def traverse(root):
+def traverse(root, statistics):
     Q = Queue()
     Q.put(root)
     count = 0
@@ -158,17 +159,23 @@ def traverse(root):
         sumOfCount += node.count
         for key, child in node.children.items():
             Q.put(child)
-    print(f'[gp-tree] average support count per node: {sumOfCount/(count-1)}')
-    return count
+    if count > 1:
+        statistics['avg cnt'] = sumOfCount/(count-1)
+    else: statistics['avg cnt'] = 0
+    # print(f'[gp-tree] average support count per node: {sumOfCount/(count-1)}')
+    return count, statistics
 
 def kgComputation(hypergraph, E, k, g):
     Q = Queue()
     R = set()
     S = {}
-    root, headerTable, gpList = buildGPTree(hypergraph, E, k, g)
-
-    print(f'[gp-tree] SIZE OF GP-TREE (BEFORE PEELING): {traverse(root)}')
-    print(f'[gp-tree] num of connected components: {len(root.children)}')
+    statistics = {}
+    root, headerTable, gpList, statistics = buildGPTree(hypergraph, E, k, g, statistics)
+    treeSize, statistics = traverse(root, statistics)
+    statistics['gp-tree size'] = treeSize
+    # print(f'[gp-tree] SIZE OF GP-TREE (BEFORE PEELING): {traverse(root)}')
+    statistics['connected components'] = len(root.children)
+    # print(f'[gp-tree] num of connected components: {len(root.children)}')
     for v in reversed(gpList):
         nbrs = findGNbr(headerTable, v, g)
         # if len(nbrs) < k:
@@ -193,10 +200,14 @@ def kgComputation(hypergraph, E, k, g):
         if v in headerTable: # 체크 필요한가?
             del headerTable[v]
 
-    print(f'[gp-tree] num of nodes in gp-list (after peeling): {len(gpList)}')
-    print(f'[gp-tree] SIZE OF GP-TREE (AFTER PEELING): {traverse(root)}')
-    print(f'[gp-tree] num of connected components (after peeling): {len(root.children)}')
-    return set(headerTable.keys()), gpList, root, headerTable, S
+    statistics['gp-list size (peeled)'] = len(gpList)
+    # print(f'[gp-tree] num of nodes in gp-list (after peeling): {len(gpList)}')
+    treeSize, statistics = traverse(root, statistics)
+    statistics['gp-tree size (peeled)'] = treeSize
+    # print(f'[gp-tree] SIZE OF GP-TREE (AFTER PEELING): {traverse(root)}')
+    statistics['connected components (peeled)'] = len(root.children)
+    # print(f'[gp-tree] num of connected components (after peeling): {len(root.children)}')
+    return set(headerTable.keys()), gpList, root, headerTable, S, statistics
 
 def insertEdge(hypergraph, gpList, root, headerTable, hyperedge, k, g, S):
     N = set()

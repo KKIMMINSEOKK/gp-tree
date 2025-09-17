@@ -4,12 +4,12 @@ import os
 import argparse
 import NPA
 import EPA
-import gptree2 as gptree
+import gptree as gptree
 import utils
 import tracemalloc
 import psutil
 import linecache
-
+import csv
 
 
 parser = argparse.ArgumentParser(description="Peeling Algorithm for Hypergraph (k, g)-core")
@@ -18,6 +18,7 @@ parser.add_argument("--network", help="Path to the network file", default='congr
 parser.add_argument("--k", type=int, help="Value of k", default=5)
 parser.add_argument("--g", type=int, help="Value of g", default=5)
 args = parser.parse_args()
+network = args.network
 args.network = f"./datasets/{args.network}/network.hyp"
 
 process = psutil.Process(os.getpid())
@@ -64,15 +65,20 @@ elif args.algorithm == "tree":
     else:
         pass
 elif args.algorithm == "compare":
+    statistics = {}
+    statistics['dataset'] = network
+    statistics['k'] = args.k
+    statistics['g'] = args.g
+
     memory_before_tree = process.memory_info().rss / (1024 * 1024)  # Convert to MB
     start_time_tree = time.time()
     # tracemalloc.start()
-    G2, gpList, root, HT, S2 = gptree.kgComputation(hypergraph, E, args.k, args.g)
+    G2, gpList, root, HT, S2, statistics_tree = gptree.kgComputation(hypergraph, E, args.k, args.g)
     # current, peak = tracemalloc.get_traced_memory()
     # tracemalloc.stop()
     end_time_tree = time.time()
     memory_after_tree = process.memory_info().rss / (1024 * 1024)  # Convert to MB
-    print(f'[gp-tree] Size of the core: {len(G2)}')
+    # print(f'[gp-tree] size of the core: {len(G2)}')
     # print(f"[gp-tree] Run Time: {end_time_tree - start_time_tree}")
     # print(f"Memory Usage: {memory_after_tree - memory_before_tree}")
     # print(f"Memory Usage: {current / (1024 * 1024)}")
@@ -81,12 +87,13 @@ elif args.algorithm == "compare":
     memory_before_NPA = process.memory_info().rss / (1024 * 1024)  # Convert to MB
     start_time_NPA = time.time()
     # # tracemalloc.start()
-    G0, NOM = NPA.run(hypergraph, args.k, args.g)
+    G0, NOM, statistics_NPA = NPA.run(hypergraph, args.k, args.g)
     # # current, peak = tracemalloc.get_traced_memory()
     # # tracemalloc.stop()
     end_time_NPA = time.time()
     memory_after_NPA = process.memory_info().rss / (1024 * 1024)  # Convert to MB
-    print(f'[NPA] Size of the core: {len(G0)}')
+    statistics['core size'] = len(G0)
+    # print(f'[NPA] size of the core: {len(G0)}')
     # print(f"Run Time: {end_time_NPA - start_time_NPA}")
     # print(f"[NPA] Memory Usage: {memory_after_NPA - memory_before_NPA}")
     # # print(f"Memory Usage: {current / (1024 * 1024)}")
@@ -114,6 +121,17 @@ elif args.algorithm == "compare":
     #             tf = False
     # print(tf)
     # print(set(G2) - set(G1))print(f'EPA: {len(G1)}')
+
+    statistics = {**statistics, **statistics_tree, **statistics_NPA}
+    statistics['tree/map'] = statistics['gp-tree size'] / statistics['occurence map size']
+    # print(statistics)
+    values = list(statistics.values())
+    file_exists = os.path.exists("compare.csv")
+    with open("compare.csv", "a", newline="") as f:
+        writer = csv.writer(f)
+        if not file_exists:
+            writer.writerow(statistics.keys())
+        writer.writerow(values)
 
 
 memory_after = process.memory_info().rss / (1024 * 1024)  # Convert to MB

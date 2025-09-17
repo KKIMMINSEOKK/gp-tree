@@ -1,6 +1,4 @@
 *.dat
-gptree_int.py
-gptree_pointer.py
-gptree_original.py
-dbpl/
-aminer/
+log.csv
+monitor.out
+monitor.py

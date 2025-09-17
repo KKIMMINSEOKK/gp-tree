@@ -34,12 +34,14 @@ def run(hypergraph, k, g):
     H = set(hypergraph.nodes())
     VQ = Queue()
     neighbor_occurrence_map, VQ = construct_neighbor_occurrence_map(hypergraph, g,k,VQ)
-    
+    statistics = {}
     count = 0
     for node, item in neighbor_occurrence_map.items():
         count += len(neighbor_occurrence_map.get(node))
-    print(f'[NPA] num of nodes in neighbor map: {len(neighbor_occurrence_map.items())}')
-    print(f'[NPA] SIZE OF NEIGHBOR MAP: {count}')
+    statistics['# of nodes in map'] = len(neighbor_occurrence_map.items())
+    # print(f'[NPA] num of nodes in neighbor map: {len(neighbor_occurrence_map.items())}')
+    statistics['occurence map size'] = count
+    # print(f'[NPA] SIZE OF NEIGHBOR MAP: {count}')
 
     while not VQ.empty():
         v = VQ.get()
@@ -53,4 +55,4 @@ def run(hypergraph, k, g):
                 VQ.put(nid)
         del neighbor_occurrence_map[v]
 
-    return hypergraph.subgraph(H),neighbor_occurrence_map
+    return hypergraph.subgraph(H),neighbor_occurrence_map, statistics
