@@ -80,6 +80,7 @@ def deleteEdge(root, e, order, gpSet):
     
 def buildGPTree(hypergraph, hyperedges, k, g):
     gpList = buildGPList(hypergraph, k, g)
+    print(f'[gp-tree] num of nodes in gp-list: {len(gpList)}')
     headerTable = {i: None for i in gpList}
     root = GPNode(None)
     order = {v: i for i, v in enumerate(gpList)} # to speed-up edge filtering & sorting
@@ -146,12 +147,28 @@ def findGNbr(headerTable, node, g):
     # dictionary에서 count가 g 이상인 노드들만 반환
     return [v for v, c in count.items() if c >= g]
 
+def traverse(root):
+    Q = Queue()
+    Q.put(root)
+    count = 0
+    sumOfCount = 0
+    while not Q.empty():
+        count += 1
+        node = Q.get()
+        sumOfCount += node.count
+        for key, child in node.children.items():
+            Q.put(child)
+    print(f'[gp-tree] average support count per node: {sumOfCount/(count-1)}')
+    return count
+
 def kgComputation(hypergraph, E, k, g):
     Q = Queue()
     R = set()
     S = {}
     root, headerTable, gpList = buildGPTree(hypergraph, E, k, g)
 
+    print(f'[gp-tree] SIZE OF GP-TREE (BEFORE PEELING): {traverse(root)}')
+    print(f'[gp-tree] num of connected components: {len(root.children)}')
     for v in reversed(gpList):
         nbrs = findGNbr(headerTable, v, g)
         # if len(nbrs) < k:
@@ -175,6 +192,10 @@ def kgComputation(hypergraph, E, k, g):
                 R.add(u)
         if v in headerTable: # 체크 필요한가?
             del headerTable[v]
+
+    print(f'[gp-tree] num of nodes in gp-list (after peeling): {len(gpList)}')
+    print(f'[gp-tree] SIZE OF GP-TREE (AFTER PEELING): {traverse(root)}')
+    print(f'[gp-tree] num of connected components (after peeling): {len(root.children)}')
     return set(headerTable.keys()), gpList, root, headerTable, S
 
 def insertEdge(hypergraph, gpList, root, headerTable, hyperedge, k, g, S):
@@ -199,8 +220,6 @@ def insertEdge(hypergraph, gpList, root, headerTable, hyperedge, k, g, S):
         if S[v] < k:
             Q.put(v)
             R.add(v)
-    initialPhaseEnd = time.time()
-    whileLoopStart = time.time()
     while not Q.empty():
         v = Q.get()
         gpList.remove(v)

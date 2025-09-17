@@ -22,7 +22,6 @@ def run(hypergraph, k, g):
     VQ1 = set()
     time_report = 0
 
-    initialPhaseStart = time.time()
     for v in H:
         time2 = time.time()
         ng = getNbrMap(hypergraph, v, g)
@@ -32,11 +31,10 @@ def run(hypergraph, k, g):
         if S[v] < k:
             VQ.put(v)
             VQ1.add(v)
-    initialPhaseEnd = time.time()
-    print(f'[EPA] initial phase time: {initialPhaseEnd - initialPhaseStart}')
-    peelingStart = time.time()
+    iterations = 0
     while not VQ.empty():
         v = VQ.get()
+        iterations += 1
         time2 = time.time()
         ng = getNbrMap(hypergraph, v, g) # 이미 탈락한 노드도 포함
         time3 = time.time()
@@ -51,16 +49,5 @@ def run(hypergraph, k, g):
                     VQ1.add(w)
             else:
                 S[w] -= 1
-    peelingEnd = time.time()
-
-    print(f'peeling time: {peelingEnd - peelingStart}')
-    # print(f'Num of nodes: {len(H)}')
-
-    # for u in H:
-    #     # print(f'node: {u}, count: {len(getNbrMap(hypergraph, u, g))}')
-    #     # print(getNbrMap(hypergraph, u, g))
-    #     print(f'node: {u}, count: {S[u]}')
-    # u = 93
-    # print(f'node: {u}, count: {S[u]}\n\n\n')
 
     return hypergraph.subgraph(H), time_report, S
